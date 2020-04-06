@@ -1,59 +1,60 @@
 package com.doublefish.langlang.controller;
 
-import com.doublefish.langlang.bean.User;
 import com.doublefish.langlang.mapper.UserMapper;
-import com.doublefish.langlang.service.TokenService;
+import com.doublefish.langlang.pojo.DTO.*;
+import com.doublefish.langlang.pojo.entity.User;
 import com.doublefish.langlang.service.UserService;
-import com.doublefish.langlang.utils.Result;
-import net.minidev.json.JSONObject;
+import com.doublefish.langlang.token.Token;
+import com.doublefish.langlang.utils.JsonResult;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletResponse;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.async.WebAsyncTask;
 
 @RestController
+@RequestMapping("/user")
 public class UserController {
     @Autowired
     UserService userService;
     @Autowired
-    TokenService tokenService;
-    @Autowired
     UserMapper userMapper;
 
-    @PostMapping("/regist")
-    public Result regist(User user){
-        Result result = userService.regist(user);
-        return result;
+    @PostMapping("/register")
+    public WebAsyncTask<Object> register(@RequestBody @Validated UserRegisterDTO dto){
+        return new WebAsyncTask<>(()->{
+            userService.register(dto);
+            userService.insertTypeUser(dto);
+            return JsonResult.ok(userService.findUserInfoByDTO(dto));
+        });
     }
 
-    @GetMapping("/login")
-    public JSONObject login(User user, HttpServletResponse response){
-        JSONObject jsonObject = new JSONObject();
+    @PostMapping("/login")
+    public WebAsyncTask<Object> login(@RequestBody @Validated UserLoginDTO dto){
+        return new WebAsyncTask<>(()-> JsonResult.ok(userService.login(dto)));
+    }
 
-        User findResult = userMapper.login(user);
-        if(findResult == null){
-            jsonObject.put("success",false);
-            jsonObject.put("Msg","此用户不存在");
-        }
-        else if(!findResult.getPassword().equals(user.getPassword()))
-        {
-            jsonObject.put("success",false);
-            jsonObject.put("Msg","密码错误");
-        }
-        else{
-            jsonObject.put("success",true);
-            jsonObject.put("Msg","登陆成功");
-            jsonObject.put("Detail",findResult);
-            String token = tokenService.getToken(userMapper.selectByName(user.getUsername()));
-            jsonObject.put("token",token);
-            Cookie cookie = new Cookie("token",token);
-            cookie.setPath("/");
-            response.addCookie(cookie);
-        }
-        return jsonObject;
+    @PutMapping("/update")
+    public WebAsyncTask<Object> update(@RequestBody @Validated UserUpdateDTO dto,
+                                       @Token User user){
+        return new WebAsyncTask<>(()-> JsonResult.ok(userService.updateUserInfo(dto,user)));
+
+    }
+
+    @PutMapping("/modifyPassword")
+    public WebAsyncTask<Object> modifyPassword(@RequestBody @Validated UserModifyPasswordDTO dto,
+                                               @Token User user){
+        return new WebAsyncTask<>(()->{
+            userService.modifyPassword(dto,user);
+            return JsonResult.ok();
+        });
+    }
+
+    @PostMapping("/resetPassword")
+    public WebAsyncTask<Object> resetPassword(@RequestBody @Validated UserResetPasswordDTO dto){
+        return new WebAsyncTask<>(()->{
+            userService.resetPassword(dto);
+            return JsonResult.ok();
+        });
     }
 
 }
