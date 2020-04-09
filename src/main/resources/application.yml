@@ -27,7 +27,8 @@ spring:
     view:
       suffix: .html
       prefix: /
-
+  jackson:
+    time-zone: GMT+8
   mail:
     host: smtp.qq.com
     username: 190368071@qq.com
