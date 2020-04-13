@@ -1,11 +1,19 @@
 package com.doublefish.langlang.controller;
 
+import com.doublefish.langlang.pojo.entity.User;
+import com.doublefish.langlang.token.Token;
+import com.doublefish.langlang.utils.HttpUtils;
+import com.doublefish.langlang.utils.UploadFileStatus;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
@@ -65,5 +73,37 @@ public class UploadFileController {
                 e.printStackTrace();
             }
         }
+    }
+
+    @PostMapping("/uploadCourseWork/{subjectId}")
+    public void uploadInfo(HttpServletRequest request, @PathVariable("subjectId") Integer subjectId,
+                           String introduction,@Token User user,
+                           MultipartHttpServletRequest multiReq) throws IOException {
+        // 获取上传文件的路径
+        String uploadFilePath = multiReq.getFile("file").getOriginalFilename();
+        System.out.println("uploadFlePath:" + uploadFilePath);
+        // 截取上传文件的文件名
+        String uploadFileName = uploadFilePath.substring(
+                uploadFilePath.lastIndexOf('\\') + 1, uploadFilePath.indexOf('.'));
+        System.out.println("multiReq.getFile()" + uploadFileName);
+        // 截取上传文件的后缀
+        String uploadFileSuffix = uploadFilePath.substring(
+                uploadFilePath.indexOf('.') + 1, uploadFilePath.length());
+        System.out.println("uploadFileSuffix:" + uploadFileSuffix);
+
+        FileInputStream inputStream = (FileInputStream) multiReq.getFile("file").getInputStream();
+        UploadFileStatus fileStatus = new UploadFileStatus();
+        fileStatus.setFileName(subjectId.toString());
+        // 上传到服务器的哪个位置
+        fileStatus.setFilePath("/root/myFile/");
+        // 文件的大小
+        fileStatus.setFileSize(inputStream.available());
+        // 文件的类型
+        fileStatus.setFileType(uploadFileSuffix);
+
+        fileStatus.setInputStream(inputStream);
+
+        String result = HttpUtils.postFile("http://47.106.83.201/upload", fileStatus);
+        System.out.println(result);
     }
 }

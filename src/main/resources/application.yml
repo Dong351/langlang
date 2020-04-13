@@ -2,7 +2,7 @@ spring:
   datasource:
     #   数据源基本配置
     username: root
-    password: EJZ0wHtcntZ0
+    password: afeEtI378tRs
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://101.132.132.173:3306/langlang?serverTimezone=Asia/Shanghai&characterEncoding=UTF-8
     type: com.alibaba.druid.pool.DruidDataSource
