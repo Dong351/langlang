@@ -30,7 +30,7 @@ public class SubjectController {
         });
     }
 
-    //获取当前班级的课程
+    //获取当前班级的课程ss
     @GetMapping("/get/{classId}")
     public WebAsyncTask<Object> getSubjectList(@PathVariable("classId") Integer cid,@Token User user){
         return new WebAsyncTask<>(()->{
