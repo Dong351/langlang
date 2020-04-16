@@ -1,22 +1,20 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <title>Insert title here</title>
+    <meta charset="UTF-8">
+    <title>多文件上传</title>
 </head>
 <body>
-<form action="http://localhost:8081/testUploadFile" method="POST" enctype="multipart/form-data">
-    <p>单文件上传：</p><br/>
-    <input type="file" name="file1"/>
-    <input type="submit" value = "上传"/>
+<form action="http://localhost:8080/uploadCourseWork/1" method="post"  enctype="multipart/form-data">
+    <!-- 作业名称-->
+    <input type="text" name="name">
+    <!-- 作业介绍-->
+    <input type="text" name="introduction">
+    <input type="text" name="start_time">
+    <input type="text" name="end_time">
+    <!--上传文件 ，目前仅支持jpg-->
+    <input type="file" name="files" value="请选择文件" multiple>
+    <input type="submit" value="上传">
 </form>
-<form method="POST" enctype="multipart/form-data"
-      action="http://localhost:8080/testUploadFiles">
-    <p>多文件上传：</p>
-    <p>文件1：<input type="file" name="file" /></p>
-    <p>文件2：<input type="file" name="file" /></p>
-    <p><input type="submit" value="上传" /></p>
-</form>
-<a href="http://localhost:8080/testDownload">下载</a>
 </body>
 </html>
