@@ -3,7 +3,9 @@ package com.doublefish.langlang.controller;
 import com.doublefish.langlang.exception.CommonException;
 import com.doublefish.langlang.mapper.CourseWorkMapper;
 import com.doublefish.langlang.pojo.entity.CourseWork;
+import com.doublefish.langlang.pojo.entity.User;
 import com.doublefish.langlang.service.CourseWorkService;
+import com.doublefish.langlang.token.Token;
 import com.doublefish.langlang.utils.HttpUtils;
 import com.doublefish.langlang.utils.UploadFileStatus;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -95,8 +97,9 @@ public class UploadFileController {
         binder.registerCustomEditor(Date.class, new CustomDateEditor(dateFormat, true));// CustomDateEditor为自定义日期编辑器
     }
 
+    //老师上传作业
     @PostMapping("/uploadCourseWork/{subjectId}")
-    public void uploadInfo(HttpServletRequest request, @PathVariable("subjectId") Integer subjectId,
+    public void teacherUpload(HttpServletRequest request, @PathVariable("subjectId") Integer subjectId,
                            @RequestParam("introduction") String introduction,@RequestParam("name") String name,
                            @RequestParam("start_time") String start_time,@RequestParam("end_time") String end_time,
                            @RequestParam("files") MultipartFile[] multiReq) throws IOException, ParseException {
@@ -127,6 +130,53 @@ public class UploadFileController {
                 FileInputStream inputStream = (FileInputStream) multiReq[i].getInputStream();
                 UploadFileStatus fileStatus = new UploadFileStatus();
                 fileStatus.setFileName(workId.toString()+"-"+i);
+                // 上传到服务器的哪个位置
+                fileStatus.setFilePath("/root/usr/local/webapp/");
+                // 文件的大小
+                fileStatus.setFileSize(inputStream.available());
+                // 文件的类型
+                fileStatus.setFileType(uploadFileSuffix);
+
+                fileStatus.setInputStream(inputStream);
+
+                String result = HttpUtils.postFile("http://47.106.83.201/upload", fileStatus);
+                System.out.println(result);
+            }
+        }
+        else if(multiReq.length == 0){
+
+        }
+        else {
+            throw new CommonException("上传失败");
+        }
+    }
+
+    //学生上传作业
+    @PostMapping("/uploadCourseWork/{courseworkId}")
+    public void studentUpload(HttpServletRequest request, @PathVariable("courseworkId") Integer cwid,
+                           @RequestParam("introduction") String introduction,@Token User user,
+                           @RequestParam("files") MultipartFile[] multiReq) throws IOException, ParseException {
+
+
+
+
+        if(multiReq.length > 0){
+            for(int i = 0;i < multiReq.length;i++){
+                // 获取上传文件的路径
+                String uploadFilePath = multiReq[i].getOriginalFilename();
+                System.out.println("uploadFlePath:" + uploadFilePath);
+                // 截取上传文件的文件名
+                String uploadFileName = uploadFilePath.substring(
+                        uploadFilePath.lastIndexOf('\\') + 1, uploadFilePath.indexOf('.'));
+                System.out.println("multiReq.getFile()" + uploadFileName);
+                // 截取上传文件的后缀
+                String uploadFileSuffix = uploadFilePath.substring(
+                        uploadFilePath.indexOf('.') + 1, uploadFilePath.length());
+                System.out.println("uploadFileSuffix:" + uploadFileSuffix);
+
+                FileInputStream inputStream = (FileInputStream) multiReq[i].getInputStream();
+                UploadFileStatus fileStatus = new UploadFileStatus();
+                fileStatus.setFileName(cwid.toString()+"-"+user.getUid()+"-"+i);
                 // 上传到服务器的哪个位置
                 fileStatus.setFilePath("/root/usr/local/webapp/");
                 // 文件的大小
