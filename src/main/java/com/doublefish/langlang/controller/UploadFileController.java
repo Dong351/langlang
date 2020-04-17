@@ -152,13 +152,14 @@ public class UploadFileController {
     }
 
     //学生上传作业
-    @PostMapping("/uploadCourseWork/{courseworkId}")
+    @PostMapping("/student/uploadCourseWork/{courseworkId}")
     public void studentUpload(HttpServletRequest request, @PathVariable("courseworkId") Integer cwid,
                            @RequestParam("introduction") String introduction,@Token User user,
                            @RequestParam("files") MultipartFile[] multiReq) throws IOException, ParseException {
 
-
-
+//        User user = new User();
+//        user.setUid(2);
+        courseWorkService.InsertStudent(cwid,introduction,user,multiReq.length);
 
         if(multiReq.length > 0){
             for(int i = 0;i < multiReq.length;i++){

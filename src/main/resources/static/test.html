@@ -5,16 +5,23 @@
     <title>多文件上传</title>
 </head>
 <body>
-<form action="http://localhost:8080/uploadCourseWork/1" method="post"  enctype="multipart/form-data">
-    <!-- 作业名称-->
-    <input type="text" name="name">
-    <!-- 作业介绍-->
+<!--<form action="http://localhost:8080/uploadCourseWork/1" method="post"  enctype="multipart/form-data">-->
+<!--    &lt;!&ndash; 作业名称&ndash;&gt;-->
+<!--    <input type="text" name="name">-->
+<!--    &lt;!&ndash; 作业介绍&ndash;&gt;-->
+<!--    <input type="text" name="introduction">-->
+<!--    <input type="text" name="start_time">-->
+<!--    <input type="text" name="end_time">-->
+<!--    &lt;!&ndash;上传文件 ，目前仅支持jpg&ndash;&gt;-->
+<!--    <input type="file" name="files" value="请选择文件" multiple>-->
+<!--    <input type="submit" value="上传">-->
+<!--</form>-->
+
+<form action="http://localhost:8080/student/uploadCourseWork/5" method="post"  enctype="multipart/form-data">
     <input type="text" name="introduction">
-    <input type="text" name="start_time">
-    <input type="text" name="end_time">
-    <!--上传文件 ，目前仅支持jpg-->
     <input type="file" name="files" value="请选择文件" multiple>
     <input type="submit" value="上传">
 </form>
 </body>
+
 </html>

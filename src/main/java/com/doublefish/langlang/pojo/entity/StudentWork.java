@@ -13,7 +13,9 @@ public class StudentWork {
     private Integer id;
     private Integer uid;
     private Integer cwid;
+    private String introduction;
     private Date upload_time;
     private Integer img_number;
     private Float score;
+    private String evaluation;
 }

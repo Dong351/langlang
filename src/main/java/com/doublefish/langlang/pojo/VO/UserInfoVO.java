@@ -1,36 +1,34 @@
 package com.doublefish.langlang.pojo.VO;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
+
+import java.util.Date;
 
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class UserInfoVO {
+    //user表参数
     private Integer uid;
-
     private String phone;
-
     private String username;
-
     private String email;
-
-    //比user多一个用户类型名称
-    private String typeName;
-
     private String accesstoken;
-
-    private String school;
-
-    private Integer grade;
-
     private Integer userType;
 
-    //学生学号
-    private String studentId;
+    //student表参数
+    private String school;
+    private Integer grade;
 
-    //学生专业
-    private String major;
-
-    //教师工号
+    //teacher表参数
     private String teachId;
+    private String typeName;
+
+    //作业相关参数
+    private Integer state;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date upload_time;
+    private Float score;
+
 }

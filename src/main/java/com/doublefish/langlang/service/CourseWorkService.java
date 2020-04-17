@@ -1,12 +1,12 @@
 package com.doublefish.langlang.service;
 
 import com.doublefish.langlang.exception.CommonException;
-import com.doublefish.langlang.mapper.CourseWorkMapper;
-import com.doublefish.langlang.mapper.SubjectMapper;
+import com.doublefish.langlang.mapper.*;
+import com.doublefish.langlang.pojo.DTO.CorrectDTO;
 import com.doublefish.langlang.pojo.VO.CourseWorkVO;
-import com.doublefish.langlang.pojo.entity.CourseWork;
-import com.doublefish.langlang.pojo.entity.Subject;
-import com.doublefish.langlang.pojo.entity.User;
+import com.doublefish.langlang.pojo.VO.UserInfoVO;
+import com.doublefish.langlang.pojo.entity.*;
+import com.doublefish.langlang.pojo.entity.Class;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,7 +23,15 @@ public class CourseWorkService {
     @Autowired
     CourseWorkMapper courseWorkMapper;
     @Autowired
+    StudentWorkMapper studentWorkMapper;
+    @Autowired
     SubjectMapper subjectMapper;
+    @Autowired
+    UserClassMapper userClassMapper;
+    @Autowired
+    UserMapper userMapper;
+    @Autowired
+    ClassMapper classMapper;
 
 
     //插入coursework表
@@ -89,7 +97,109 @@ public class CourseWorkService {
             throw new CommonException("您没有权限删除该作业");
         }
 
+        //删除student_work表
+        StudentWork find = new StudentWork();
+        find.setCwid(cwid);
+        List<StudentWork> studentWorks = studentWorkMapper.select(find);
+        for(StudentWork studentWork:studentWorks){
+            studentWorkMapper.delete(studentWork);
+        }
         courseWorkMapper.deleteByPrimaryKey(cwid);
+        return null;
+    }
+
+    //插入student_work表
+    public void InsertStudent(Integer cwid, String introduction, User user, int length) {
+        StudentWork studentWork = new StudentWork();
+        studentWork.setCwid(cwid);
+        studentWork.setUid(user.getUid());
+        studentWork.setIntroduction(introduction);
+        studentWork.setImg_number(length);
+        studentWork.setUpload_time(new Date());
+
+        studentWorkMapper.insert(studentWork);
+    }
+
+    /**
+     * 获取cwid作业的所有学生
+     * @param cwid 作业id
+     * @param user 操作者user，权限老师
+     * @return 学生vo集合
+     */
+    public Object GetStudentWorks(Integer cwid, User user) {
+        //检查token
+        if(user.getType() != 2){
+            throw new CommonException("您不是教师，无权限查看作业提交情况");
+        }
+
+        //获取班级学生名单
+        Integer sid = courseWorkMapper.selectByPrimaryKey(cwid).getSid();
+        Integer cid = subjectMapper.selectByPrimaryKey(sid).getCid();
+        UserClass findUserClass = new UserClass();
+        findUserClass.setCid(cid);
+        List<UserClass> select = userClassMapper.select(findUserClass);
+        List<UserInfoVO> userInfoVOList = new ArrayList<>();
+        for(UserClass userClass:select){
+            User result = userMapper.selectByPrimaryKey(userClass.getUid());
+            UserInfoVO userInfoVO = new UserInfoVO();
+            userInfoVO.setUsername(result.getUsername());
+            userInfoVO.setUid(result.getUid());
+            userInfoVO.setState(0);
+
+            //判断user是否提交作业,state=0,1,2分别代表为提交，未修改，已修改
+            StudentWork findStudentWork = new StudentWork();
+            findStudentWork.setUid(result.getUid());
+            findStudentWork.setCwid(cwid);
+            StudentWork studentWork = studentWorkMapper.selectOne(findStudentWork);
+            if(studentWork != null){
+                userInfoVO.setUpload_time(studentWork.getUpload_time());
+                Integer state = studentWork.getScore()==null?1:2;
+                userInfoVO.setState(state);
+                userInfoVO.setScore(studentWork.getScore());
+            }
+
+            userInfoVOList.add(userInfoVO);
+        }
+        return userInfoVOList;
+    }
+
+    /**
+     * 获取cwid作业中指定uid用户的作业详情
+     * @param cwid
+     * @param uid
+     * @param user
+     * @return student_workInfoVO
+     */
+    public Object GetStudentWork(Integer cwid, Integer uid, User user) {
+        Integer sid = courseWorkMapper.selectByPrimaryKey(cwid).getSid();
+        Integer cid = subjectMapper.selectByPrimaryKey(sid).getCid();
+        Class aClass = classMapper.selectByPrimaryKey(cid);
+        if(aClass.getUid() != user.getUid()){
+            throw new CommonException("权限不足");
+        }
+
+        StudentWork find = new StudentWork();
+        find.setCwid(cwid);
+        find.setUid(uid);
+        StudentWork studentWork = studentWorkMapper.selectOne(find);
+        return studentWork;
+    }
+
+    public Object CorrectWork(Integer cwid, Integer uid, User user, CorrectDTO dto) {
+        Integer sid = courseWorkMapper.selectByPrimaryKey(cwid).getSid();
+        Integer cid = subjectMapper.selectByPrimaryKey(sid).getCid();
+        Class aClass = classMapper.selectByPrimaryKey(cid);
+        if(aClass.getUid() != user.getUid()){
+            throw new CommonException("权限不足");
+        }
+
+        StudentWork find = new StudentWork();
+        find.setCwid(cwid);
+        find.setUid(uid);
+        StudentWork studentWork = studentWorkMapper.selectOne(find);
+        studentWork.setScore(dto.getScore());
+        studentWork.setEvaluation(dto.getEvaluation());
+        studentWorkMapper.updateByPrimaryKeySelective(studentWork);
         return null;
     }
 }

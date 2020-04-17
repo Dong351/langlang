@@ -17,4 +17,7 @@ public class SubjectVO {
     private Integer cid;
 
     private String createPeople;
+
+
+
 }
