@@ -49,4 +49,10 @@ public class CourseWorkController {
                                             @RequestBody CorrectDTO dto, @Token User user){
         return new WebAsyncTask<>(()-> JsonResult.ok(courseWorkService.CorrectWork(cwid,uid,user,dto)));
     }
+
+    //学生获取指定作业的批改情况
+    @GetMapping("/student/get/{courseworkId}")
+    public WebAsyncTask<Object> GetCorrectInfo(@PathVariable("courseworkId")Integer cwid, @Token User user){
+        return new WebAsyncTask<>(()-> JsonResult.ok(courseWorkService.GetCorrectInfo(cwid,user)));
+    }
 }

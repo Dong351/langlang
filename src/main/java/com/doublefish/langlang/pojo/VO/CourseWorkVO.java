@@ -30,4 +30,6 @@ public class CourseWorkVO {
     private Integer sid;
 
     private Integer state;
+
+    private String score;
 }

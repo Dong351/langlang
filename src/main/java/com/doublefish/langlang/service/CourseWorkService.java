@@ -72,6 +72,20 @@ public class CourseWorkService {
             if(courseWork.getEnd_time().before(new Date())){
                 courseWorkVO.setState(1);
             }
+
+            StudentWork findStudentWork = new StudentWork();
+            findStudentWork.setCwid(courseWork.getId());
+            findStudentWork.setUid(user.getUid());
+            StudentWork studentWork = studentWorkMapper.selectOne(findStudentWork);
+            courseWorkVO.setScore("未提交");
+            if(studentWork != null){
+                if(studentWork.getScore() == null){
+                    courseWorkVO.setScore("尚未批改");
+                }
+                else {
+                    courseWorkVO.setScore(studentWork.getScore().toString());
+                }
+            }
             courseWorkVOList.add(courseWorkVO);
         }
         return courseWorkVOList;
@@ -113,12 +127,33 @@ public class CourseWorkService {
         StudentWork studentWork = new StudentWork();
         studentWork.setCwid(cwid);
         studentWork.setUid(user.getUid());
+        StudentWork selectOne = studentWorkMapper.selectOne(studentWork);
+
         studentWork.setIntroduction(introduction);
         studentWork.setImg_number(length);
         studentWork.setUpload_time(new Date());
 
-        studentWorkMapper.insert(studentWork);
+        if(selectOne == null) {
+            studentWorkMapper.insert(studentWork);
+        }
+        else {
+            studentWorkMapper.updateByPrimaryKeySelective(studentWork);
+        }
     }
+
+    /**
+     * 更新student_work
+     * @param cwid
+     * @param introduction
+     * @param user
+     * @param length
+     */
+//    public void UpdateWork(Integer cwid, String introduction, User user, int length) {
+//        //判断学生作业是否存在
+//        StudentWork find = new StudentWork();
+//        studentWorkMapper.selectOne(find);
+//        if()
+//    }
 
     /**
      * 获取cwid作业的所有学生
@@ -141,6 +176,9 @@ public class CourseWorkService {
         List<UserInfoVO> userInfoVOList = new ArrayList<>();
         for(UserClass userClass:select){
             User result = userMapper.selectByPrimaryKey(userClass.getUid());
+            if(result.getType() == 2){
+                continue;
+            }
             UserInfoVO userInfoVO = new UserInfoVO();
             userInfoVO.setUsername(result.getUsername());
             userInfoVO.setUid(result.getUid());
@@ -201,5 +239,27 @@ public class CourseWorkService {
         studentWork.setEvaluation(dto.getEvaluation());
         studentWorkMapper.updateByPrimaryKeySelective(studentWork);
         return null;
+    }
+
+
+    public Object GetCorrectInfo(Integer cwid, User user) {
+
+        StudentWork findStudentWork = new StudentWork();
+        findStudentWork.setUid(user.getUid());
+        findStudentWork.setCwid(cwid);
+        StudentWork studentWork = studentWorkMapper.selectOne(findStudentWork);
+        if(studentWork == null){
+//            throw new CommonException("尚未提交作业！");
+            return "尚未提交作业!";
+        }
+
+        else if(studentWork.getScore() == null){
+//            throw new CommonException("未批改");
+            return "未批改!";
+        }
+
+        CorrectDTO dto = new CorrectDTO();
+        BeanUtils.copyProperties(studentWork,dto);
+        return dto;
     }
 }
