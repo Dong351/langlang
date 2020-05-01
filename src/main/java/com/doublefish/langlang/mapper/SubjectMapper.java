@@ -6,4 +6,5 @@ import tk.mybatis.mapper.common.BaseMapper;
 
 @Repository
 public interface SubjectMapper extends BaseMapper<Subject> {
+
 }

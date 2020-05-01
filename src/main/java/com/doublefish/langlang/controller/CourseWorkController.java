@@ -1,6 +1,7 @@
 package com.doublefish.langlang.controller;
 
 import com.doublefish.langlang.pojo.DTO.CorrectDTO;
+import com.doublefish.langlang.pojo.DTO.SelectFillCreateDTO;
 import com.doublefish.langlang.pojo.entity.User;
 import com.doublefish.langlang.service.CourseWorkService;
 import com.doublefish.langlang.token.Token;
@@ -8,6 +9,8 @@ import com.doublefish.langlang.utils.JsonResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.async.WebAsyncTask;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/coursework")
@@ -22,6 +25,7 @@ public class CourseWorkController {
         return new WebAsyncTask<>(()-> JsonResult.ok(courseWorkService.GetCourseWorks(sid,user)));
     }
 
+    //拉取具体作业的详情
     @PutMapping("/get/{courseworkId}")
     public WebAsyncTask<Object> GetCourseWork(@PathVariable("courseworkId")Integer cwid, @Token User user){
         return new WebAsyncTask<>(()-> JsonResult.ok(courseWorkService.GetCourseWork(cwid,user)));
@@ -54,5 +58,17 @@ public class CourseWorkController {
     @GetMapping("/student/get/{courseworkId}")
     public WebAsyncTask<Object> GetCorrectInfo(@PathVariable("courseworkId")Integer cwid, @Token User user){
         return new WebAsyncTask<>(()-> JsonResult.ok(courseWorkService.GetCorrectInfo(cwid,user)));
+    }
+
+    @PostMapping("/select_fill/create/{subjectId}")
+    public WebAsyncTask<Object> CreateSelectFill(@PathVariable("subjectId") Integer subjectId,
+                                                 @RequestBody SelectFillCreateDTO dto, @Token User user){
+        return new WebAsyncTask<>(()-> JsonResult.ok(courseWorkService.CreateSelectFill(subjectId,user,dto)));
+    }
+
+    @PostMapping("/select_fill/submit/{courseworkId}")
+    public WebAsyncTask<Object> SubmitSelectFill(@PathVariable("courseworkId") Integer courseworkId,
+                                                 @RequestBody Map<Integer,String> answers, @Token User user){
+        return new WebAsyncTask<>(()-> JsonResult.ok(courseWorkService.SubmitSelectFill(courseworkId,user,answers)));
     }
 }

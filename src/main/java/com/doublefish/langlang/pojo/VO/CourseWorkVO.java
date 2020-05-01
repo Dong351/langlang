@@ -1,10 +1,12 @@
 package com.doublefish.langlang.pojo.VO;
 
+import com.doublefish.langlang.pojo.entity.SelectFill;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
 import java.util.Date;
+import java.util.List;
 
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -32,4 +34,6 @@ public class CourseWorkVO {
     private Integer state;
 
     private String score;
+
+    private List<SelectFill> selectFillList;
 }

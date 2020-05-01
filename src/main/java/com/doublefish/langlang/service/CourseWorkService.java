@@ -1,12 +1,15 @@
 package com.doublefish.langlang.service;
 
+import com.doublefish.langlang.bean.VO.CorrectVO;
+import com.doublefish.langlang.bean.VO.SelectFillVO;
 import com.doublefish.langlang.exception.CommonException;
 import com.doublefish.langlang.mapper.*;
 import com.doublefish.langlang.pojo.DTO.CorrectDTO;
+import com.doublefish.langlang.pojo.DTO.SelectFillCreateDTO;
 import com.doublefish.langlang.pojo.VO.CourseWorkVO;
 import com.doublefish.langlang.pojo.VO.UserInfoVO;
-import com.doublefish.langlang.pojo.entity.*;
 import com.doublefish.langlang.pojo.entity.Class;
+import com.doublefish.langlang.pojo.entity.*;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,6 +20,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class CourseWorkService {
@@ -32,6 +36,8 @@ public class CourseWorkService {
     UserMapper userMapper;
     @Autowired
     ClassMapper classMapper;
+    @Autowired
+    SelectFillMapper selectFillMapper;
 
 
     //插入coursework表
@@ -99,6 +105,17 @@ public class CourseWorkService {
         if(courseWork.getEnd_time().before(new Date())){
             courseWorkVO.setState(1);
         }
+        if(courseWorkVO.getIntroduction().equals("select&&fill")){
+            courseWorkVO.setIntroduction(null);
+            SelectFill findSelectFill = new SelectFill();
+            findSelectFill.setCwId(cwid);
+            List<SelectFill> selectFillList = selectFillMapper.select(findSelectFill);
+            for(SelectFill selectFill:selectFillList){
+                selectFill.setAnswer(null);
+                selectFill.setCwId(null);
+            }
+            courseWorkVO.setSelectFillList(selectFillList);
+        }
         return courseWorkVO;
     }
 
@@ -117,6 +134,14 @@ public class CourseWorkService {
         List<StudentWork> studentWorks = studentWorkMapper.select(find);
         for(StudentWork studentWork:studentWorks){
             studentWorkMapper.delete(studentWork);
+        }
+
+        //删除select_fill表
+        SelectFill findSelectFill = new SelectFill();
+        findSelectFill.setCwId(cwid);
+        List<SelectFill> selectFills = selectFillMapper.select(findSelectFill);
+        for(SelectFill selectFill:selectFills){
+            selectFillMapper.delete(selectFill);
         }
         courseWorkMapper.deleteByPrimaryKey(cwid);
         return null;
@@ -258,8 +283,111 @@ public class CourseWorkService {
             return "未批改!";
         }
 
-        CorrectDTO dto = new CorrectDTO();
-        BeanUtils.copyProperties(studentWork,dto);
-        return dto;
+        List<SelectFillVO> selectFillVOS = new ArrayList<>();
+        if(courseWorkMapper.selectByPrimaryKey(cwid).getIntroduction().equals("select&&fill")){
+            SelectFill findSelectFill = new SelectFill();
+            findSelectFill.setCwId(cwid);
+            List<SelectFill> selectFillList = selectFillMapper.select(findSelectFill);
+            String introduction = studentWork.getIntroduction();
+            String[] split = introduction.split("-");
+            System.out.println(split);
+            int i = 0;
+            for(SelectFill selectFill:selectFillList){
+                SelectFillVO selectFillVO = new SelectFillVO();
+                BeanUtils.copyProperties(selectFill,selectFillVO);
+                selectFillVO.setStudent_answer(split[i]);
+                selectFillVO.setCwId(null);
+                if(selectFill.getAnswer().equals(split[i])){
+                    selectFillVO.setStudent_score(selectFill.getScore());
+                }
+                else{
+                    selectFillVO.setStudent_score(0);
+                }
+                selectFillVOS.add(selectFillVO);
+                i++;
+            }
+        }
+
+        CorrectVO correctVO = new CorrectVO();
+        BeanUtils.copyProperties(studentWork,correctVO);
+        correctVO.setSelectFillVOList(selectFillVOS);
+        return correctVO;
+    }
+
+    /**
+     * 创建选择填空式作业
+     * @param subjectId
+     * @param user 课程创建者
+     * @param dto
+     * @return
+     * @throws ParseException
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public Object CreateSelectFill(Integer subjectId, User user, SelectFillCreateDTO dto) throws ParseException {
+        if(subjectMapper.selectByPrimaryKey(subjectId).getUid() != user.getUid()){
+            throw new CommonException("权限不足");
+        }
+
+        CourseWork courseWork = new CourseWork();
+        BeanUtils.copyProperties(dto,courseWork);
+        //日期格式转换
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        courseWork.setStart_time(sdf.parse(dto.getStart_time()));
+        courseWork.setEnd_time(sdf.parse(dto.getEnd_time()));
+        courseWork.setIntroduction("select&&fill");
+        courseWork.setImg_number(0);
+        courseWork.setSid(subjectId);
+        courseWorkMapper.insertWork(courseWork);
+//        System.out.println(courseWork.getId());
+
+        //讲dto里的选择填空数据插入select_fill表
+        List<SelectFill> selectFillList = dto.getSelectFillList();
+        for(SelectFill selectFill:selectFillList){
+            selectFill.setCwId(courseWork.getId());
+            selectFillMapper.insert(selectFill);
+        }
+        return null;
+    }
+
+    /**
+     * 学生提交选择填空作业，并对各题打分
+     * @param courseworkId
+     * @param user
+     * @param answers
+     * @return
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public Object SubmitSelectFill(Integer courseworkId, User user, Map<Integer, String> answers) {
+        Integer score = 0;
+        String evaluation = "本题为系统评分"+"\n";
+        String introduction = "";
+//        int i = 1;
+        for(Map.Entry<Integer,String> entry:answers.entrySet()){
+            Integer id = entry.getKey();
+            String answer = entry.getValue();
+            introduction = introduction + answer + "-";
+            SelectFill selectFill = selectFillMapper.selectByPrimaryKey(id);
+            Integer GetScore = 0;
+            if(selectFill.getAnswer().equals(answer)){
+                GetScore = selectFill.getScore();
+                score += GetScore;
+            }
+//            evaluation = evaluation+i+". "+GetScore+"\n";
+//            i++;
+        }
+        StudentWork studentWork = new StudentWork();
+        studentWork.setUid(user.getUid());
+        studentWork.setCwid(courseworkId);
+        if(studentWorkMapper.selectOne(studentWork) != null){
+            throw new CommonException("你已提交过作业!");
+        }
+        studentWork.setUpload_time(new Date());
+        studentWork.setImg_number(0);
+        studentWork.setScore(Float.valueOf(score));
+        studentWork.setIntroduction(introduction);
+        studentWork.setEvaluation(evaluation);
+
+        studentWorkMapper.insert(studentWork);
+        return null;
     }
 }
